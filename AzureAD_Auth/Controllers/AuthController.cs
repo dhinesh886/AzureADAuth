@@ -38,22 +38,32 @@ namespace AzureAD_Auth.Controllers
 
         private async Task<LoginResponse> PostAsync(LoginRequest loginRequest)
         {
-            var fullUserName = loginRequest.userName + "@" + this.directoryName;
-            var payload = new
+             var fullUserName = loginRequest.userName + "@" + this.directoryName;
+
+            MultipartFormDataContent form = new MultipartFormDataContent();
+            HttpContent grant_type = new StringContent("password");
+            HttpContent resource = new StringContent(this.api_app_key);
+            HttpContent client_id = new StringContent(loginRequest.client_app_key);
+            HttpContent username = new StringContent(fullUserName);
+            HttpContent password = new StringContent(loginRequest.password);
+            HttpContent scope = new StringContent("openid");
+            HttpContent client_secret = new StringContent(loginRequest.client_secret);
+
+            form.Add(grant_type, "grant_type");
+            form.Add(resource, "resource");
+            form.Add(client_id, "client_id");
+            form.Add(username, "username");
+            form.Add(password, "password");
+            form.Add(scope, "scope");
+            form.Add(client_secret, "client_secret");
+            var loginResponse = new LoginResponse();
+            HttpResponseMessage response = await client.PostAsync(
+                         "dhinesh8586gmail.onmicrosoft.com/oauth2/token", form);
+            if (response.IsSuccessStatusCode)
             {
-                grand_type = "password",
-                resource = this.api_app_key,
-                client_id = loginRequest.client_app_key,
-                username = fullUserName,
-                password = loginRequest.password,
-                scope = "openid",
-                client_secret = loginRequest.client_secret
-        };
-        HttpResponseMessage response = await client.PostAsJsonAsync(
-                "dhinesh8586gmail.onmicrosoft.com/oauth2/token", payload);
-            response.EnsureSuccessStatusCode();
-            // Deserialize the updated product from the response body.
-            var loginResponse = await response.Content.ReadAsAsync<LoginResponse>();
+                // Deserialize the updated product from the response body.
+                loginResponse = await response.Content.ReadAsAsync<LoginResponse>();
+            }
             return loginResponse;
         }
     }
